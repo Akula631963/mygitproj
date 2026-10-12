@@ -1,0 +1,75 @@
+<html>
+<head>
+<title>JavaScript Demo Page</title>
+</head>
+<body>
+<h2>Internal Scripting</h2>
+
+<br><br>
+
+<label>A = </label>
+<input type="text" placeholder="Enter a value" id="text1">
+
+<br><br>
+
+<label>B = </label>
+<input type="text" placeholder="Enter a value" id="text2">
+
+<p id="demo1"></p>
+
+<button type="button" onclick="setOperation('+')"><b>+</b></button>
+<button type="button" onclick="setOperation('-')"><b>-</b></button>
+<button type="button" onclick="setOperation('*')"><b>*</b></button>
+<button type="button" onclick="setOperation('/')"><b>/</b></button>
+<button type="button" onclick="calculate()"><b>=</b></button>
+
+<script>
+var operation = "";
+
+function setOperation(op)
+{
+    operation = op;
+}
+
+function calculate()
+{
+    var a = parseFloat(document.getElementById("text1").value);
+    var b = parseFloat(document.getElementById("text2").value);
+    var c;
+
+    if(operation == "+")
+    {
+        c = a + b;
+    }
+    else if(operation == "-")
+    {
+        c = a - b;
+    }
+    else if(operation == "*")
+    {
+        c = a * b;
+    }
+    else if(operation == "/")
+    {
+        if(b == 0)
+        {
+            document.getElementById("demo1").innerHTML =
+            "Division by zero is not allowed";
+            return;
+        }
+        c = a / b;
+    }
+    else
+    {
+        document.getElementById("demo1").innerHTML =
+        "Please select an operation first";
+        return;
+    }
+
+    document.getElementById("demo1").innerHTML =
+    "Result = " + c;
+}
+</script>
+
+</body>
+</html>

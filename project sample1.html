@@ -1,0 +1,810 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Kitty — Shared Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --felt: #163a2e;
+    --felt-deep: #0f2921;
+    --card: #f6efd9;
+    --card-2: #fffdf4;
+    --ink: #241f16;
+    --muted: #756d58;
+    --gold: #c9a227;
+    --burgundy: #7a2e2e;
+    --owed: #2e6e52;
+    --owes: #b33f35;
+    --line: #dcd2ae;
+    --radius: 4px;
+    --cat-food: #c9a227;
+    --cat-transport: #2f5d8a;
+    --cat-housing: #7a2e2e;
+    --cat-utilities: #2e6e52;
+    --cat-entertainment: #6a4c93;
+    --cat-shopping: #b33f35;
+    --cat-other: #5c5648;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --card: #221d13;
+      --card-2: #2a2417;
+      --ink: #f1e9d2;
+      --muted: #b3a988;
+      --line: #4a422c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --card: #221d13;
+    --card-2: #2a2417;
+    --ink: #f1e9d2;
+    --muted: #b3a988;
+    --line: #4a422c;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(ellipse at top, rgba(255,255,255,0.05), transparent 60%),
+      var(--felt);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Karla', sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .display { font-family: 'Alfa Slab One', cursive; }
+
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 30px 18px 80px; }
+
+  header.masthead { text-align: center; margin-bottom: 22px; color: #f6efd9; }
+  header.masthead .kicker {
+    font-size: 0.7rem; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase;
+  }
+  header.masthead h1 {
+    font-family: 'Alfa Slab One', cursive;
+    font-size: 2.1rem;
+    margin: 8px 0 4px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.3);
+  }
+  header.masthead .sub { font-size: 0.85rem; color: #cfead9; opacity: 0.85; }
+
+  /* Table switcher */
+  .table-switch {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .table-pill {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--gold);
+    background: transparent;
+    color: #f6efd9;
+    cursor: pointer;
+  }
+  .table-pill.active { background: var(--gold); color: var(--felt-deep); }
+  .table-pill.new-table { border-style: dashed; opacity: 0.8; }
+
+  /* Nav tabs styled as playing cards */
+  nav.card-nav {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+  }
+  nav.card-nav button {
+    font-family: 'Alfa Slab One', cursive;
+    font-size: 0.85rem;
+    background: var(--card-2);
+    border: 2px solid var(--line);
+    border-bottom-width: 4px;
+    border-radius: var(--radius);
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  nav.card-nav button.active {
+    border-color: var(--gold);
+    color: var(--burgundy);
+    transform: translateY(-2px);
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .panel h2 {
+    font-family: 'Alfa Slab One', cursive;
+    font-size: 1.05rem;
+    margin: 0 0 16px;
+    color: var(--burgundy);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 820px) { .grid-2 { grid-template-columns: 300px 1fr; align-items: start; } }
+
+  /* Players / members */
+  .players-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .player-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card-2); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 10px 12px;
+  }
+  .player-row .name { font-weight: 700; }
+  .player-row .stack { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .player-row .bar-track { width: 100%; height: 6px; background: var(--line); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .player-row .bar-fill { height: 100%; border-radius: 3px; }
+  .player-row .remove {
+    background: none; border: none; color: var(--owes); cursor: pointer; font-size: 1rem; line-height: 1; margin-left: 10px;
+  }
+  .add-player { display: flex; gap: 6px; }
+  .add-player input {
+    flex: 1; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--line);
+    background: var(--card-2); color: var(--ink); font-family: inherit; font-size: 0.85rem;
+  }
+  .add-player button {
+    background: var(--felt); color: #f6efd9; border: none; padding: 8px 14px; border-radius: var(--radius);
+    font-family: inherit; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+  }
+
+  .stat-strip { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+  .stat-box { flex: 1; min-width: 120px; background: var(--card-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .stat-box .num { font-family: 'Alfa Slab One', cursive; font-size: 1.4rem; color: var(--burgundy); }
+  .stat-box .label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  .chart-box { max-width: 260px; margin: 16px auto 0; }
+
+  /* Ledger form */
+  form label { display: block; font-size: 0.72rem; color: var(--muted); margin: 12px 0 5px; font-weight: 700; }
+  form input, form select {
+    width: 100%; padding: 9px 10px; border-radius: var(--radius); border: 1px solid var(--line);
+    background: var(--card-2); color: var(--ink); font-family: inherit; font-size: 0.88rem;
+  }
+  .split-type-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .split-type-row label {
+    display: flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 11px; font-size: 0.72rem; margin: 0; cursor: pointer; font-weight: 500;
+  }
+  .split-type-row input { width: auto; }
+  .split-members { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .split-member-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+  .split-member-row .sname { flex: 1; display: flex; align-items: center; gap: 6px; }
+  .split-member-row input[type="number"] { width: 90px; }
+  .split-sum-note { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+  .split-sum-note.bad { color: var(--owes); font-weight: 700; }
+
+  .buy-in-btn {
+    margin-top: 18px; width: 100%; background: var(--burgundy); color: #f6efd9; border: none;
+    padding: 12px; border-radius: var(--radius); font-family: 'Alfa Slab One', cursive;
+    font-size: 0.85rem; letter-spacing: 0.03em; cursor: pointer;
+  }
+  .buy-in-btn:hover { opacity: 0.9; }
+
+  .ledger-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ledger-tools input, .ledger-tools select {
+    padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--line);
+    background: var(--card-2); color: var(--ink); font-family: inherit; font-size: 0.8rem;
+  }
+
+  .expense-row {
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 12px 0; border-bottom: 1px dashed var(--line);
+  }
+  .expense-row:last-child { border-bottom: none; }
+  .exp-main { flex: 1; min-width: 200px; }
+  .exp-main .top-line { display: flex; align-items: center; gap: 8px; }
+  .exp-main .desc { font-weight: 700; }
+  .cat-chip {
+    font-size: 0.65rem; padding: 2px 8px; border-radius: 999px; color: white; font-weight: 700;
+  }
+  .exp-main .who { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .exp-amt { text-align: right; }
+  .exp-amt .amt { font-weight: 700; font-family: 'Alfa Slab One', cursive; color: var(--burgundy); }
+  .exp-amt button { background: none; border: none; color: var(--owes); font-size: 0.7rem; cursor: pointer; margin-top: 4px; display: block; }
+
+  .empty { text-align: center; padding: 40px 15px; color: var(--muted); font-size: 0.85rem; }
+
+  /* Cash out page */
+  .settle-row {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+    background: var(--card-2); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 13px 16px; margin-bottom: 10px;
+  }
+  .settle-row .desc { font-size: 0.88rem; }
+  .settle-row .desc b { color: var(--burgundy); }
+  .settle-row .amt { color: var(--owes); font-family: 'Alfa Slab One', cursive; font-size: 1rem; }
+  .settle-row button {
+    background: var(--owed); color: white; border: none; padding: 7px 13px; border-radius: var(--radius);
+    font-family: inherit; font-weight: 700; font-size: 0.75rem; cursor: pointer;
+  }
+  .all-settled { text-align: center; padding: 30px; color: var(--owed); font-family: 'Alfa Slab One', cursive; }
+
+  .history-row {
+    display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted);
+    padding: 8px 0; border-bottom: 1px dotted var(--line);
+  }
+  .history-row:last-child { border-bottom: none; }
+
+  footer.credit { text-align: center; color: #b9d6c3; font-size: 0.7rem; margin-top: 30px; opacity: 0.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="kicker">* Everyone Chips In *</div>
+    <h1>The Kitty</h1>
+    <div class="sub">a shared tab for the whole table — split fair, cash out clean</div>
+  </header>
+
+  <div class="table-switch" id="tableSwitch"></div>
+
+  <nav class="card-nav">
+    <button data-page="table" class="active">The Table</button>
+    <button data-page="ledger">The Ledger</button>
+    <button data-page="cashout">Cash Out</button>
+  </nav>
+
+  <!-- PAGE 1: THE TABLE -->
+  <section class="page active" id="page-table">
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Players</h2>
+        <div class="players-list" id="playersList"></div>
+        <div class="add-player">
+          <input type="text" id="newPlayerInput" placeholder="Add a player">
+          <button id="addPlayerBtn">Add</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Table Overview</h2>
+        <div class="stat-strip" id="overviewStats"></div>
+        <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 2: THE LEDGER -->
+  <section class="page" id="page-ledger">
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Buy In (Add Expense)</h2>
+        <form id="expenseForm">
+          <label>What was it?</label>
+          <input type="text" id="desc" required placeholder="Groceries, rent, pizza...">
+
+          <label>Amount</label>
+          <input type="number" id="amount" required min="0.01" step="0.01" placeholder="0.00">
+
+          <label>Category</label>
+          <select id="category">
+            <option value="food">🍔 Food</option>
+            <option value="transport">🚗 Transport</option>
+            <option value="housing">🏠 Housing</option>
+            <option value="utilities">💡 Utilities</option>
+            <option value="entertainment">🎬 Entertainment</option>
+            <option value="shopping">🛍️ Shopping</option>
+            <option value="other">📎 Other</option>
+          </select>
+
+          <label>Paid by</label>
+          <select id="paidBy"></select>
+
+          <label>Split</label>
+          <div class="split-type-row">
+            <label><input type="radio" name="splitType" value="equal" checked> Equal</label>
+            <label><input type="radio" name="splitType" value="percent"> Percentage</label>
+            <label><input type="radio" name="splitType" value="exact"> Exact amounts</label>
+            <label><input type="radio" name="splitType" value="shares"> Shares</label>
+          </div>
+          <div class="split-members" id="splitMembers"></div>
+          <div class="split-sum-note" id="splitSumNote"></div>
+
+          <button type="submit" class="buy-in-btn">Add to the Ledger</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Itemized Ledger</h2>
+        <div class="ledger-tools">
+          <input type="text" id="searchBox" placeholder="Search description...">
+          <select id="filterCategory">
+            <option value="All">All categories</option>
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="housing">Housing</option>
+            <option value="utilities">Utilities</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="shopping">Shopping</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="filterPerson"><option value="All">Everyone</option></select>
+        </div>
+        <div id="expenseList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 3: CASH OUT -->
+  <section class="page" id="page-cashout">
+    <div class="panel">
+      <h2>Who Owes Whom</h2>
+      <div id="settleList"></div>
+    </div>
+    <div class="panel">
+      <h2>Settlement History</h2>
+      <div id="historyList"></div>
+    </div>
+  </section>
+
+  <footer class="credit">The Kitty — track it, split it, cash out clean.</footer>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'the-kitty-data';
+  const CATS = {
+    food: { label: 'Food', emoji: '🍔', color: 'var(--cat-food)' },
+    transport: { label: 'Transport', emoji: '🚗', color: 'var(--cat-transport)' },
+    housing: { label: 'Housing', emoji: '🏠', color: 'var(--cat-housing)' },
+    utilities: { label: 'Utilities', emoji: '💡', color: 'var(--cat-utilities)' },
+    entertainment: { label: 'Entertainment', emoji: '🎬', color: 'var(--cat-entertainment)' },
+    shopping: { label: 'Shopping', emoji: '🛍️', color: 'var(--cat-shopping)' },
+    other: { label: 'Other', emoji: '📎', color: 'var(--cat-other)' }
+  };
+  const CAT_HEX = {
+    food: '#c9a227', transport: '#2f5d8a', housing: '#7a2e2e', utilities: '#2e6e52',
+    entertainment: '#6a4c93', shopping: '#b33f35', other: '#5c5648'
+  };
+
+  let state = { tables: {}, activeTableId: null };
+  let catChart = null;
+  let currentPage = 'table';
+
+  function newTable(name) {
+    const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    state.tables[id] = { name, members: ['You'], expenses: [], payments: [] };
+    return id;
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) state = JSON.parse(raw);
+    } catch (e) { /* start fresh */ }
+    if (!state.tables || Object.keys(state.tables).length === 0) {
+      state.tables = {};
+      const id = newTable('Roommates');
+      state.activeTableId = id;
+    }
+    if (!state.activeTableId || !state.tables[state.activeTableId]) {
+      state.activeTableId = Object.keys(state.tables)[0];
+    }
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { console.error(e); }
+  }
+  function activeTable() { return state.tables[state.activeTableId]; }
+  function uid(prefix) { return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7); }
+  function money(n) { return '$' + n.toFixed(2); }
+  function esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  // ---------- Navigation ----------
+  document.querySelectorAll('nav.card-nav button').forEach(btn => {
+    btn.addEventListener('click', () => switchPage(btn.dataset.page));
+  });
+  function switchPage(page) {
+    currentPage = page;
+    document.querySelectorAll('nav.card-nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    location.hash = page;
+    if (page === 'table') renderCategoryChart();
+  }
+  window.addEventListener('hashchange', () => {
+    const p = location.hash.replace('#', '') || 'table';
+    if (['table', 'ledger', 'cashout'].includes(p)) switchPage(p);
+  });
+
+  // ---------- Table switcher ----------
+  function renderTableSwitch() {
+    const bar = document.getElementById('tableSwitch');
+    bar.innerHTML = Object.keys(state.tables).map(id => `
+      <button class="table-pill ${id === state.activeTableId ? 'active' : ''}" data-id="${id}">${esc(state.tables[id].name)}</button>
+    `).join('') + `<button class="table-pill new-table" id="newTableBtn">+ New table</button>`;
+
+    bar.querySelectorAll('.table-pill[data-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.activeTableId = btn.dataset.id;
+        save();
+        renderAll();
+      });
+    });
+    document.getElementById('newTableBtn').addEventListener('click', () => {
+      const name = prompt('Name this table (e.g. "Bali Trip", "Apartment 4B")');
+      if (!name || !name.trim()) return;
+      const id = newTable(name.trim());
+      state.activeTableId = id;
+      save();
+      renderAll();
+    });
+  }
+
+  // ---------- Players ----------
+  function renderPlayers() {
+    const t = activeTable();
+    const balances = computeBalances();
+    const maxAbs = Math.max(1, ...Object.values(balances).map(b => Math.abs(b)));
+    const list = document.getElementById('playersList');
+    list.innerHTML = t.members.map(m => {
+      const bal = balances[m] || 0;
+      const pct = Math.min(100, (Math.abs(bal) / maxAbs) * 100);
+      const color = bal >= 0 ? 'var(--owed)' : 'var(--owes)';
+      const balLabel = bal >= 0 ? `up ${money(bal)}` : `down ${money(-bal)}`;
+      return `
+        <div class="player-row">
+          <div style="flex:1;">
+            <div class="name">${esc(m)}</div>
+            <div class="stack">${balLabel}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${color};"></div></div>
+          </div>
+          <button class="remove" data-name="${esc(m)}" title="Remove player">×</button>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.name;
+        const t = activeTable();
+        const inUse = t.expenses.some(e => e.paidBy === name || Object.keys(e.splits).includes(name))
+          || t.payments.some(p => p.from === name || p.to === name);
+        if (inUse) { alert(name + ' has expenses or payments on record — remove those first.'); return; }
+        t.members = t.members.filter(m => m !== name);
+        save();
+        renderAll();
+      });
+    });
+
+    document.getElementById('addPlayerBtn').onclick = addPlayer;
+    document.getElementById('newPlayerInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addPlayer(); } };
+  }
+  function addPlayer() {
+    const input = document.getElementById('newPlayerInput');
+    const name = input.value.trim();
+    if (!name) return;
+    const t = activeTable();
+    if (t.members.includes(name)) { input.value = ''; return; }
+    t.members.push(name);
+    save();
+    input.value = '';
+    renderAll();
+  }
+
+  // ---------- Overview ----------
+  function renderOverview() {
+    const t = activeTable();
+    const total = t.expenses.reduce((s, e) => s + e.amount, 0);
+    const stats = document.getElementById('overviewStats');
+    stats.innerHTML = `
+      <div class="stat-box"><div class="num">${money(total)}</div><div class="label">Total in the kitty</div></div>
+      <div class="stat-box"><div class="num">${t.expenses.length}</div><div class="label">Buy-ins</div></div>
+      <div class="stat-box"><div class="num">${t.members.length}</div><div class="label">Players</div></div>
+    `;
+  }
+  function renderCategoryChart() {
+    const t = activeTable();
+    const totals = {};
+    Object.keys(CATS).forEach(c => totals[c] = 0);
+    t.expenses.forEach(e => totals[e.category] = (totals[e.category] || 0) + e.amount);
+
+    const labels = Object.keys(CATS).filter(c => totals[c] > 0);
+    const ctx = document.getElementById('categoryChart');
+    const data = {
+      labels: labels.map(c => CATS[c].emoji + ' ' + CATS[c].label),
+      datasets: [{ data: labels.map(c => totals[c]), backgroundColor: labels.map(c => CAT_HEX[c]), borderWidth: 2, borderColor: getComputedStyle(document.body).getPropertyValue('--card') }]
+    };
+    if (labels.length === 0) {
+      if (catChart) { catChart.destroy(); catChart = null; }
+      return;
+    }
+    if (catChart) { catChart.data = data; catChart.update(); }
+    else {
+      catChart = new Chart(ctx, {
+        type: 'doughnut',
+        data,
+        options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }, cutout: '55%' }
+      });
+    }
+  }
+
+  // ---------- Ledger form: dynamic split inputs ----------
+  function renderLedgerForm() {
+    const t = activeTable();
+    const paidBy = document.getElementById('paidBy');
+    paidBy.innerHTML = t.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+    renderSplitMembers();
+  }
+  function currentSplitType() {
+    return document.querySelector('input[name="splitType"]:checked').value;
+  }
+  function renderSplitMembers() {
+    const t = activeTable();
+    const type = currentSplitType();
+    const box = document.getElementById('splitMembers');
+    box.innerHTML = t.members.map(m => {
+      let inputHtml = '';
+      if (type === 'percent') inputHtml = `<input type="number" min="0" max="100" step="1" class="split-val" data-name="${esc(m)}" placeholder="%">`;
+      else if (type === 'exact') inputHtml = `<input type="number" min="0" step="0.01" class="split-val" data-name="${esc(m)}" placeholder="$">`;
+      else if (type === 'shares') inputHtml = `<input type="number" min="0" step="1" class="split-val" data-name="${esc(m)}" placeholder="shares">`;
+      return `
+        <div class="split-member-row">
+          <span class="sname"><input type="checkbox" class="split-check" value="${esc(m)}" checked> ${esc(m)}</span>
+          ${inputHtml}
+        </div>
+      `;
+    }).join('');
+    updateSplitSumNote();
+    box.querySelectorAll('.split-val, .split-check').forEach(el => el.addEventListener('input', updateSplitSumNote));
+    box.querySelectorAll('.split-check').forEach(el => el.addEventListener('change', updateSplitSumNote));
+  }
+  document.querySelectorAll('input[name="splitType"]').forEach(r => r.addEventListener('change', renderSplitMembers));
+
+  function updateSplitSumNote() {
+    const type = currentSplitType();
+    const note = document.getElementById('splitSumNote');
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    if (type === 'equal') { note.textContent = ''; note.classList.remove('bad'); return; }
+    const vals = Array.from(document.querySelectorAll('.split-val')).filter(i => {
+      const row = i.closest('.split-member-row');
+      return row.querySelector('.split-check').checked;
+    }).map(i => parseFloat(i.value) || 0);
+    const sum = vals.reduce((s, v) => s + v, 0);
+    if (type === 'percent') {
+      note.textContent = `Percentages total ${sum}% (needs to be 100%)`;
+      note.classList.toggle('bad', Math.abs(sum - 100) > 0.5);
+    } else if (type === 'exact') {
+      note.textContent = `Exact amounts total ${money(sum)} of ${money(amount)}`;
+      note.classList.toggle('bad', Math.abs(sum - amount) > 0.01);
+    } else if (type === 'shares') {
+      note.textContent = `${sum} total share${sum === 1 ? '' : 's'} across selected players`;
+      note.classList.toggle('bad', sum <= 0);
+    }
+  }
+  document.getElementById('amount').addEventListener('input', updateSplitSumNote);
+
+  function computeSplits(amount, type) {
+    const rows = Array.from(document.querySelectorAll('.split-member-row'));
+    const checked = rows.filter(r => r.querySelector('.split-check').checked);
+    if (checked.length === 0) return null;
+
+    const splits = {};
+    if (type === 'equal') {
+      const share = amount / checked.length;
+      checked.forEach(r => splits[r.querySelector('.split-check').value] = share);
+      return splits;
+    }
+    if (type === 'percent') {
+      let sum = 0;
+      checked.forEach(r => { const v = parseFloat(r.querySelector('.split-val').value) || 0; sum += v; });
+      if (Math.abs(sum - 100) > 0.5) return null;
+      checked.forEach(r => {
+        const v = parseFloat(r.querySelector('.split-val').value) || 0;
+        splits[r.querySelector('.split-check').value] = amount * (v / 100);
+      });
+      return splits;
+    }
+    if (type === 'exact') {
+      let sum = 0;
+      checked.forEach(r => { const v = parseFloat(r.querySelector('.split-val').value) || 0; sum += v; });
+      if (Math.abs(sum - amount) > 0.01) return null;
+      checked.forEach(r => splits[r.querySelector('.split-check').value] = parseFloat(r.querySelector('.split-val').value) || 0);
+      return splits;
+    }
+    if (type === 'shares') {
+      let totalShares = 0;
+      checked.forEach(r => { const v = parseFloat(r.querySelector('.split-val').value) || 0; totalShares += v; });
+      if (totalShares <= 0) return null;
+      checked.forEach(r => {
+        const v = parseFloat(r.querySelector('.split-val').value) || 0;
+        splits[r.querySelector('.split-check').value] = amount * (v / totalShares);
+      });
+      return splits;
+    }
+    return null;
+  }
+
+  document.getElementById('expenseForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const desc = document.getElementById('desc').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const category = document.getElementById('category').value;
+    const paidBy = document.getElementById('paidBy').value;
+    const type = currentSplitType();
+
+    if (!desc || !amount || amount <= 0) { alert('Add a description and a positive amount.'); return; }
+    const splits = computeSplits(amount, type);
+    if (!splits) { alert('Check your split — the numbers need to add up correctly.'); return; }
+
+    const t = activeTable();
+    t.expenses.push({ id: uid('e'), desc, amount, category, paidBy, splitType: type, splits });
+    save();
+    this.reset();
+    renderLedgerForm();
+    updateSplitSumNote();
+    renderAll();
+  });
+
+  // ---------- Ledger list ----------
+  function renderFilterOptions() {
+    const t = activeTable();
+    const sel = document.getElementById('filterPerson');
+    const prev = sel.value;
+    sel.innerHTML = `<option value="All">Everyone</option>` + t.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+    if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  }
+
+  function renderExpenseList() {
+    const t = activeTable();
+    const search = document.getElementById('searchBox').value.trim().toLowerCase();
+    const filterCat = document.getElementById('filterCategory').value;
+    const filterPerson = document.getElementById('filterPerson').value;
+
+    let list = t.expenses.slice().reverse();
+    if (search) list = list.filter(e => e.desc.toLowerCase().includes(search));
+    if (filterCat !== 'All') list = list.filter(e => e.category === filterCat);
+    if (filterPerson !== 'All') list = list.filter(e => e.paidBy === filterPerson || Object.keys(e.splits).includes(filterPerson));
+
+    const box = document.getElementById('expenseList');
+    if (list.length === 0) {
+      box.innerHTML = `<div class="empty">No expenses match. Try clearing filters or add one on the left.</div>`;
+      return;
+    }
+    box.innerHTML = list.map(e => {
+      const cat = CATS[e.category] || CATS.other;
+      const splitNames = Object.keys(e.splits);
+      return `
+        <div class="expense-row" data-id="${e.id}">
+          <div class="exp-main">
+            <div class="top-line">
+              <span class="desc">${esc(e.desc)}</span>
+              <span class="cat-chip" style="background:${cat.color}">${cat.emoji} ${cat.label}</span>
+            </div>
+            <div class="who">paid by ${esc(e.paidBy)} · split ${e.splitType} with ${splitNames.map(esc).join(', ')}</div>
+          </div>
+          <div class="exp-amt">
+            <div class="amt">${money(e.amount)}</div>
+            <button class="del-exp" data-id="${e.id}">remove</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    box.querySelectorAll('.del-exp').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = activeTable();
+        t.expenses = t.expenses.filter(e => e.id !== btn.dataset.id);
+        save();
+        renderAll();
+      });
+    });
+  }
+  document.getElementById('searchBox').addEventListener('input', renderExpenseList);
+  document.getElementById('filterCategory').addEventListener('change', renderExpenseList);
+  document.getElementById('filterPerson').addEventListener('change', renderExpenseList);
+
+  // ---------- Balances & settle up ----------
+  function computeBalances() {
+    const t = activeTable();
+    const balances = {};
+    t.members.forEach(m => balances[m] = 0);
+    t.expenses.forEach(e => {
+      balances[e.paidBy] = (balances[e.paidBy] || 0) + e.amount;
+      Object.keys(e.splits).forEach(person => {
+        balances[person] = (balances[person] || 0) - e.splits[person];
+      });
+    });
+    t.payments.forEach(p => {
+      balances[p.from] = (balances[p.from] || 0) + p.amt;
+      balances[p.to] = (balances[p.to] || 0) - p.amt;
+    });
+    return balances;
+  }
+  function simplifyDebts(balances) {
+    const creditors = [], debtors = [];
+    Object.keys(balances).forEach(person => {
+      const bal = Math.round(balances[person] * 100) / 100;
+      if (bal > 0.005) creditors.push({ person, amt: bal });
+      else if (bal < -0.005) debtors.push({ person, amt: -bal });
+    });
+    creditors.sort((a, b) => b.amt - a.amt);
+    debtors.sort((a, b) => b.amt - a.amt);
+    const settlements = [];
+    let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      const pay = Math.min(debtors[i].amt, creditors[j].amt);
+      settlements.push({ from: debtors[i].person, to: creditors[j].person, amt: pay });
+      debtors[i].amt -= pay; creditors[j].amt -= pay;
+      if (debtors[i].amt < 0.005) i++;
+      if (creditors[j].amt < 0.005) j++;
+    }
+    return settlements;
+  }
+
+  function renderCashout() {
+    const balances = computeBalances();
+    const settlements = simplifyDebts(balances);
+    const list = document.getElementById('settleList');
+    if (settlements.length === 0) {
+      list.innerHTML = `<div class="all-settled">The table's even. Nobody owes a thing.</div>`;
+    } else {
+      list.innerHTML = settlements.map((s, idx) => `
+        <div class="settle-row" data-idx="${idx}">
+          <div class="desc"><b>${esc(s.from)}</b> owes <b>${esc(s.to)}</b></div>
+          <div class="amt">${money(s.amt)}</div>
+          <button class="mark-paid" data-from="${esc(s.from)}" data-to="${esc(s.to)}" data-amt="${s.amt}">Mark paid</button>
+        </div>
+      `).join('');
+    }
+    list.querySelectorAll('.mark-paid').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = activeTable();
+        t.payments.push({ id: uid('p'), from: btn.dataset.from, to: btn.dataset.to, amt: parseFloat(btn.dataset.amt), date: new Date().toISOString() });
+        save();
+        renderAll();
+      });
+    });
+
+    const t = activeTable();
+    const hist = document.getElementById('historyList');
+    if (t.payments.length === 0) {
+      hist.innerHTML = `<div class="empty">No settlements recorded yet.</div>`;
+    } else {
+      hist.innerHTML = t.payments.slice().reverse().map(p => `
+        <div class="history-row">
+          <span>${esc(p.from)} → ${esc(p.to)}</span>
+          <span>${money(p.amt)} · ${new Date(p.date).toLocaleDateString()}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function renderAll() {
+    renderTableSwitch();
+    renderPlayers();
+    renderOverview();
+    if (currentPage === 'table') renderCategoryChart();
+    renderLedgerForm();
+    renderFilterOptions();
+    renderExpenseList();
+    renderCashout();
+  }
+
+  load();
+  const startPage = (location.hash || '#table').replace('#', '');
+  currentPage = ['table', 'ledger', 'cashout'].includes(startPage) ? startPage : 'table';
+  switchPage(currentPage);
+  renderAll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<html>
+<head>
+    <title>Login Validation</title>
+</head>
+<body>
+
+<div>
+    <h2>Register</h2>
+
+    <label>USERNAME:</label>
+    <input type="text" id="uname" placeholder="Enter Username">
+    <br>
+    <span id="uerror" style="color:red"></span>
+    <br><br>
+
+    <label>PASSWORD:</label>
+    <input type="password" id="pass" placeholder="Enter Password">
+    <br>
+    <span id="perror" style="color:red"></span>
+    <br><br>
+
+    <button onclick="saveUser()">SAVE</button>
+    <button onclick="loginUser()">LOGIN</button>
+</div>
+
+<script>
+
+function saveUser()
+{
+    let unm = document.getElementById("uname").value;
+    let pwd = document.getElementById("pass").value;
+
+    let uerr = document.getElementById("uerror");
+    let perr = document.getElementById("perror");
+
+    uerr.innerHTML = "";
+    perr.innerHTML = "";
+
+    let valid = true;
+
+    if(unm === "")
+    {
+        uerr.innerHTML = "Enter Username";
+        valid = false;
+    }
+    else if(!unm.includes("@"))
+    {
+        uerr.innerHTML = "Enter a valid Email ID";
+        valid = false;
+    }
+
+    if(pwd === "")
+    {
+        perr.innerHTML = "Enter Password";
+        valid = false;
+    }
+    else if(pwd.length < 8)
+    {
+        perr.innerHTML = "Password should have at least 8 characters";
+        valid = false;
+    }
+
+    if(valid)
+    {
+        localStorage.setItem("username", unm);
+        localStorage.setItem("password", pwd);
+
+        alert("Registration Successful! Data Saved.");
+    }
+}
+
+function loginUser()
+{
+    let unm = document.getElementById("uname").value;
+    let pwd = document.getElementById("pass").value;
+
+    let savedUser = localStorage.getItem("username");
+    let savedPass = localStorage.getItem("password");
+
+    if(unm === savedUser && pwd === savedPass)
+    {
+        alert("Login Successful!");
+    }
+    else
+    {
+        alert("Invalid Username or Password!");
+    }
+}
+
+</script>
+
+</body>
+</html>
